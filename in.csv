@@ -1,0 +1,24 @@
+17,,Device
+75138,17,Laptop/Desktop
+75139,17,Smartphone
+75140,17,Tablet
+75141,17,Other Mobile Device
+236002,17,Unknown
+300938,75138,Linux Laptop/Desktop
+300939,75138,Mac Laptop/Desktop
+300940,75138,Windows Laptop/Desktop
+300941,75138,Other Laptop/Desktop
+300942,75138,Unknown Laptop/Desktop
+300943,75139,iPhone
+300944,75139,Android Smartphone
+300945,75139,Windows Smartphone
+300946,75139,Blackberry Smartphone
+300947,75139,Unknown Smartphone
+300948,75140,iPad
+300949,75140,Android Tablet
+300950,75140,Windows Tablet
+300951,75140,Unknown Tablet
+300952,75141,iPod
+300953,75141,Android Other Mobile Device
+300954,75141,Windows Other Mobile Device
+300955,75141,Unknown Other Mobile Device
