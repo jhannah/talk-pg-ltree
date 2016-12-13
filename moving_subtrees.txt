@@ -1,0 +1,97 @@
+Load the database from my talk: https://github.com/jhannah/talk-pg-ltree
+
+Look at the tree:
+
+SELECT t.id, t.path, t.name, array_to_string(array_agg(a.name ORDER BY a.path), ' > ') AS fullname
+FROM tree AS t INNER JOIN tree AS a
+  ON (a.path @> t.path)
+GROUP BY t.id, t.path, t.name
+ORDER BY fullname;
+
+   id   |      path       |            name             |                          fullname
+--------+-----------------+-----------------------------+------------------------------------------------------------
+     17 | 17              | Device                      | Device
+  75138 | 17.75138        | Laptop/Desktop              | Device > Laptop/Desktop
+ 300938 | 17.75138.300938 | Linux Laptop/Desktop        | Device > Laptop/Desktop > Linux Laptop/Desktop
+ 300939 | 17.75138.300939 | Mac Laptop/Desktop          | Device > Laptop/Desktop > Mac Laptop/Desktop
+ 300941 | 17.75138.300941 | Other Laptop/Desktop        | Device > Laptop/Desktop > Other Laptop/Desktop
+ 300942 | 17.75138.300942 | Unknown Laptop/Desktop      | Device > Laptop/Desktop > Unknown Laptop/Desktop
+ 300940 | 17.75138.300940 | Windows Laptop/Desktop      | Device > Laptop/Desktop > Windows Laptop/Desktop
+  75141 | 17.75141        | Other Mobile Device         | Device > Other Mobile Device
+ 300953 | 17.75141.300953 | Android Other Mobile Device | Device > Other Mobile Device > Android Other Mobile Device
+ 300955 | 17.75141.300955 | Unknown Other Mobile Device | Device > Other Mobile Device > Unknown Other Mobile Device
+ 300954 | 17.75141.300954 | Windows Other Mobile Device | Device > Other Mobile Device > Windows Other Mobile Device
+ 300952 | 17.75141.300952 | iPod                        | Device > Other Mobile Device > iPod
+  75139 | 17.75139        | Smartphone                  | Device > Smartphone
+ 300944 | 17.75139.300944 | Android Smartphone          | Device > Smartphone > Android Smartphone
+ 300946 | 17.75139.300946 | Blackberry Smartphone       | Device > Smartphone > Blackberry Smartphone
+ 300947 | 17.75139.300947 | Unknown Smartphone          | Device > Smartphone > Unknown Smartphone
+ 300945 | 17.75139.300945 | Windows Smartphone          | Device > Smartphone > Windows Smartphone
+ 300943 | 17.75139.300943 | iPhone                      | Device > Smartphone > iPhone
+  75140 | 17.75140        | Tablet                      | Device > Tablet
+ 300949 | 17.75140.300949 | Android Tablet              | Device > Tablet > Android Tablet
+ 300951 | 17.75140.300951 | Unknown Tablet              | Device > Tablet > Unknown Tablet
+ 300950 | 17.75140.300950 | Windows Tablet              | Device > Tablet > Windows Tablet
+ 300948 | 17.75140.300948 | iPad                        | Device > Tablet > iPad
+ 236002 | 17.236002       | Unknown                     | Device > Unknown
+(24 rows)
+
+
+
+Now say you want to move the entire 'Smartphone' subtree to be a child of a new node 'Dumbphone';
+
+
+tree=# INSERT INTO tree (parent_id, name) VALUES (17, 'Dumbphone');
+INSERT 0 1
+tree=# select * from tree where name = 'Dumbphone';
+ id | parent_id | path |   name    |          created_on           |          updated_on
+----+-----------+------+-----------+-------------------------------+-------------------------------
+  1 |        17 | 17.1 | Dumbphone | 2016-12-13 13:14:36.942226-06 | 2016-12-13 13:14:36.942226-06
+(1 row)
+
+
+tree=# UPDATE tree set parent_id = 1 where name = 'Smartphone';
+UPDATE 1
+
+
+That's it. We're completely done moving the subtree.
+
+Let's look at the results:
+
+
+tree=# SELECT t.id, t.path, t.name, array_to_string(array_agg(a.name ORDER BY a.path), ' > ') AS fullname
+tree-# FROM tree AS t INNER JOIN tree AS a
+tree-#   ON (a.path @> t.path)
+tree-# GROUP BY t.id, t.path, t.name
+tree-# ORDER BY fullname;
+
+
+   id   |       path        |            name             |                          fullname
+--------+-------------------+-----------------------------+------------------------------------------------------------
+     17 | 17                | Device                      | Device
+      1 | 17.1              | Dumbphone                   | Device > Dumbphone
+  75139 | 17.1.75139        | Smartphone                  | Device > Dumbphone > Smartphone
+ 300944 | 17.1.75139.300944 | Android Smartphone          | Device > Dumbphone > Smartphone > Android Smartphone
+ 300946 | 17.1.75139.300946 | Blackberry Smartphone       | Device > Dumbphone > Smartphone > Blackberry Smartphone
+ 300947 | 17.1.75139.300947 | Unknown Smartphone          | Device > Dumbphone > Smartphone > Unknown Smartphone
+ 300945 | 17.1.75139.300945 | Windows Smartphone          | Device > Dumbphone > Smartphone > Windows Smartphone
+ 300943 | 17.1.75139.300943 | iPhone                      | Device > Dumbphone > Smartphone > iPhone
+  75138 | 17.75138          | Laptop/Desktop              | Device > Laptop/Desktop
+ 300938 | 17.75138.300938   | Linux Laptop/Desktop        | Device > Laptop/Desktop > Linux Laptop/Desktop
+ 300939 | 17.75138.300939   | Mac Laptop/Desktop          | Device > Laptop/Desktop > Mac Laptop/Desktop
+ 300941 | 17.75138.300941   | Other Laptop/Desktop        | Device > Laptop/Desktop > Other Laptop/Desktop
+ 300942 | 17.75138.300942   | Unknown Laptop/Desktop      | Device > Laptop/Desktop > Unknown Laptop/Desktop
+ 300940 | 17.75138.300940   | Windows Laptop/Desktop      | Device > Laptop/Desktop > Windows Laptop/Desktop
+  75141 | 17.75141          | Other Mobile Device         | Device > Other Mobile Device
+ 300953 | 17.75141.300953   | Android Other Mobile Device | Device > Other Mobile Device > Android Other Mobile Device
+ 300955 | 17.75141.300955   | Unknown Other Mobile Device | Device > Other Mobile Device > Unknown Other Mobile Device
+ 300954 | 17.75141.300954   | Windows Other Mobile Device | Device > Other Mobile Device > Windows Other Mobile Device
+ 300952 | 17.75141.300952   | iPod                        | Device > Other Mobile Device > iPod
+  75140 | 17.75140          | Tablet                      | Device > Tablet
+ 300949 | 17.75140.300949   | Android Tablet              | Device > Tablet > Android Tablet
+ 300951 | 17.75140.300951   | Unknown Tablet              | Device > Tablet > Unknown Tablet
+ 300950 | 17.75140.300950   | Windows Tablet              | Device > Tablet > Windows Tablet
+ 300948 | 17.75140.300948   | iPad                        | Device > Tablet > iPad
+ 236002 | 17.236002         | Unknown                     | Device > Unknown
+(25 rows)
+
